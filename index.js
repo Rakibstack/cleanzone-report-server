@@ -38,8 +38,6 @@ const verifyfirebasetoken = async (req,res,next) => {
     catch{
          return res.status(401).send('unauthorize access') 
     }
-
-
 }
 
 
@@ -60,11 +58,20 @@ async function run() {
         const CleanZoneDB = client.db('CleanZoneDB')
         const Allissues = CleanZoneDB.collection('Allissues')
 
-        app.post('/allissues',verifyfirebasetoken, async (req,res) => {
-            
+
+        // Allissues Related Apis
+        app.post('/allissues',verifyfirebasetoken, async (req,res) => {        
             const newissue = req.body
             const result = await Allissues.insertOne(newissue);
             res.send(result)      
+
+        })
+
+        app.get('/recent-issues',async (req,res) => {
+
+        const courser = Allissues.find().sort({date: -1}).limit(6);
+        const result = await courser.toArray()
+        res.send(result);
 
         })
 
