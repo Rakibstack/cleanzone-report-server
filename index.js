@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.port || 3000;
 const admin = require("firebase-admin");
 
@@ -23,7 +23,7 @@ const verifyfirebasetoken = async (req,res,next) => {
     if(!authorization){
         return res.status(401).send('unauthorize access')
     }
-    const token =authorization.split(' ')[1]
+    const token = authorization.split(' ')[1]
     if(!token){
         return res.status(401).send('unauthorize access') 
     }
@@ -57,6 +57,7 @@ async function run() {
         await client.connect()
         const CleanZoneDB = client.db('CleanZoneDB')
         const Allissues = CleanZoneDB.collection('Allissues')
+        const mycontribute =CleanZoneDB.collection('mycontribute')
 
 
         // Allissues Related Apis
@@ -77,7 +78,20 @@ async function run() {
         const courser = Allissues.find().sort({date: -1}).limit(6);
         const result = await courser.toArray()
         res.send(result);
+        })
 
+        app.get('/detailspage/:id',async (req,res) => {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id)};
+          const result = await Allissues.findOne(query)
+          res.send(result);
+
+        })
+        // my contribute related apis
+        app.post('/mycontribute',verifyfirebasetoken, async (req,res) => {
+            const newcontribute = req.body
+            const result = await mycontribute.insertOne(newcontribute)
+            res.send(result);
         })
 
      
