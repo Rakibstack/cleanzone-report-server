@@ -64,7 +64,12 @@ async function run() {
             const newissue = req.body
             const result = await Allissues.insertOne(newissue);
             res.send(result)      
+        })
 
+        app.get('/findAllissus',async (req,res)=> {
+            const courser = Allissues.find()
+            const result = await courser.toArray()
+            res.send(result);
         })
 
         app.get('/recent-issues',async (req,res) => {
