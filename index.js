@@ -31,7 +31,6 @@ const verifyfirebasetoken = async (req,res,next) => {
     try{
      const decoded = await admin.auth().verifyIdToken(token)
      req.token_email = decoded.email;
-     console.log(decoded);
      next()
      
     }
@@ -91,6 +90,14 @@ async function run() {
         app.post('/mycontribute',verifyfirebasetoken, async (req,res) => {
             const newcontribute = req.body
             const result = await mycontribute.insertOne(newcontribute)
+            res.send(result);
+        })
+
+        app.get('/mycontribute/:productid',verifyfirebasetoken, async (req,res) => {
+            const productid = req.params.productid
+            const query = { productid : productid }
+            const courser =  mycontribute.find(query)
+            const result = await courser.toArray();
             res.send(result);
         })
 
