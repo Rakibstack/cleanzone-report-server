@@ -9,7 +9,7 @@ const admin = require("firebase-admin");
 const serviceAccount = require("./clean-zone-client-firebase-adminsdk-.json");
 
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(serviceAccount)
 });
 
 
@@ -17,25 +17,25 @@ admin.initializeApp({
 app.use(cors());
 app.use(express.json());
 
-const verifyfirebasetoken = async (req,res,next) => {
+const verifyfirebasetoken = async (req, res, next) => {
 
     const authorization = req.headers.authorization;
-    if(!authorization){
+    if (!authorization) {
         return res.status(401).send('unauthorize access')
     }
     const token = authorization.split(' ')[1]
-    if(!token){
-        return res.status(401).send('unauthorize access') 
+    if (!token) {
+        return res.status(401).send('unauthorize access')
     }
 
-    try{
-     const decoded = await admin.auth().verifyIdToken(token)
-     req.token_email = decoded.email;
-     next()
-     
+    try {
+        const decoded = await admin.auth().verifyIdToken(token)
+        req.token_email = decoded.email;
+        next()
+
     }
-    catch{
-         return res.status(401).send('unauthorize access') 
+    catch {
+        return res.status(401).send('unauthorize access')
     }
 }
 
@@ -56,52 +56,93 @@ async function run() {
         await client.connect()
         const CleanZoneDB = client.db('CleanZoneDB')
         const Allissues = CleanZoneDB.collection('Allissues')
-        const mycontribute =CleanZoneDB.collection('mycontribute')
+        const mycontribute = CleanZoneDB.collection('mycontribute')
 
 
         // Allissues Related Apis
-        app.post('/allissues',verifyfirebasetoken, async (req,res) => {        
+        app.post('/allissues', verifyfirebasetoken, async (req, res) => {
             const newissue = req.body
             const result = await Allissues.insertOne(newissue);
-            res.send(result)      
+            res.send(result)
         })
 
-        app.get('/findAllissus',async (req,res)=> {
+        app.get('/findAllissus', async (req, res) => {
             const courser = Allissues.find()
             const result = await courser.toArray()
             res.send(result);
         })
 
-        app.get('/recent-issues',async (req,res) => {
+        app.get('/recent-issues', async (req, res) => {
 
-        const courser = Allissues.find().sort({date: -1}).limit(6);
-        const result = await courser.toArray()
-        res.send(result);
+            const courser = Allissues.find().sort({ date: -1 }).limit(6);
+            const result = await courser.toArray()
+            res.send(result);
         })
 
-        app.get('/detailspage/:id',async (req,res) => {
-          const id = req.params.id;
-          const query = { _id: new ObjectId(id)};
-          const result = await Allissues.findOne(query)
-          res.send(result);
+        app.get('/myissues', verifyfirebasetoken, async (req, res) => {
+
+            const email = req.query.email;
+            const query = {}
+            if (email) {
+                query.email = email
+                if (email !== req.token_email) {
+                    return res.status(403).send('forbidden access')
+                }
+            }
+            const corsur = await Allissues.find(query).sort({ amount: 1 }).toArray()
+            res.send(corsur)
+        })
+
+        app.patch('/updateissues/:id', verifyfirebasetoken, async (req,res) => {
+          
+            const id = req.params.id
+            const Updateissue = req.body
+            const query = { _id: new ObjectId(id)}
+            const update = {
+                $set: {
+                title: Updateissue.title,
+                category:Updateissue.category,
+                amount:Updateissue.amount,
+                description:Updateissue.description,
+                status:Updateissue.status
+                }
+            }
+            const result = await Allissues.updateOne(query,update)
+            res.send(result);
+        })
+
+
+        app.delete('/deleteissues/:id', verifyfirebasetoken, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id)}
+            const result = await Allissues.deleteOne(query)
+            res.send(result);
+
+        })
+
+        app.get('/detailspage/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await Allissues.findOne(query)
+            res.send(result);
 
         })
         // my contribute related apis
-        app.post('/mycontribute',verifyfirebasetoken, async (req,res) => {
+        app.post('/mycontribute', verifyfirebasetoken, async (req, res) => {
             const newcontribute = req.body
             const result = await mycontribute.insertOne(newcontribute)
             res.send(result);
         })
 
-        app.get('/mycontribute/:productid',verifyfirebasetoken, async (req,res) => {
+        app.get('/mycontribute/:productid', verifyfirebasetoken, async (req, res) => {
             const productid = req.params.productid
-            const query = { productid : productid }
-            const courser =  mycontribute.find(query)
+            const query = { productid: productid }
+            const courser = mycontribute.find(query)
             const result = await courser.toArray();
             res.send(result);
         })
 
-     
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!")
     }
