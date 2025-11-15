@@ -18,6 +18,8 @@ admin.initializeApp({
 app.use(cors());
 app.use(express.json());
 
+// verifyfirebasetoken middleware.
+
 const verifyfirebasetoken = async (req, res, next) => {
 
     const authorization = req.headers.authorization;
