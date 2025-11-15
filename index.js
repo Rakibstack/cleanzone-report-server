@@ -3,11 +3,12 @@ const app = express()
 const cors = require('cors')
 require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const port = process.env.port || 3000;
+const port = process.env.PORT || 3000;
 const admin = require("firebase-admin");
 const PDFDocument = require("pdfkit");
 
-const serviceAccount = require("./clean-zone-client-firebase-adminsdk-.json");
+const decoded = Buffer.from(process.env.FIREBASE_SERVICE_KEY, "base64").toString("utf8");
+const serviceAccount = JSON.parse(decoded);
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
@@ -56,7 +57,7 @@ const client = new MongoClient(uri, {
 async function run() {
 
     try {
-        await client.connect()
+        // await client.connect()
         const CleanZoneDB = client.db('CleanZoneDB')
         const Allissues = CleanZoneDB.collection('Allissues')
         const mycontribute = CleanZoneDB.collection('mycontribute')
@@ -216,7 +217,8 @@ async function run() {
         });
 
 
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
+
         console.log("Pinged your deployment. You successfully connected to MongoDB!")
     }
     finally {
